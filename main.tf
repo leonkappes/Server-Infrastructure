@@ -91,8 +91,8 @@ resource "hcloud_server" "masters" {
     type = "master"
   }
   public_net {
-    ipv4_enabled = false
-    ipv6_enabled = true
+    ipv4_enabled = true
+    ipv6_enabled = false
   }
   network {
     network_id = hcloud_network.k3s_internal.id

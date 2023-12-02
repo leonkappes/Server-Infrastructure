@@ -1,0 +1,19 @@
+---
+- name: Prepare all servers
+  hosts: k3s_cluster
+  gather_facts: yes
+  roles:
+    - role: preinstall
+      become: true
+    - role: download
+      become: true
+- name: Install masters
+  hosts: masters
+  roles:
+    - role: k3s-master
+      become: true
+- name: Install nodes
+  hosts: nodes
+  roles:
+    - role: k3s-node
+      become: true

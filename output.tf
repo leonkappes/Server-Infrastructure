@@ -1,6 +1,6 @@
 # Master IPs
 output "master-ips" {
-  value = hcloud_server.masters[*].ipv6_address
+  value = hcloud_server.masters[*].ipv4_address
 }
 
 # Node IPs

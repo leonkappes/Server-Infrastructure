@@ -1,0 +1,22 @@
+---
+k3s_version: v1.28.3+k3s2
+# this is the user that has ssh access to these machines
+ansible_user: root
+systemd_dir: /etc/systemd/system
+k3s_token: "some-SUPER-DEDEUPER-secret-password"
+# interface which will be used for flannel
+flannel_iface: "ens10"
+k3s_node_ip: '{{ ansible_facts[flannel_iface]["ipv4"]["address"] }}'
+
+# these arguments are recommended for servers as well as agents:
+extra_args: >-
+  --flannel-iface={{ flannel_iface }}
+  --node-ip={{ k3s_node_ip }}
+
+extra_server_args: >-
+  {{ extra_args }}
+  --node-taint node-role.kubernetes.io/master=true:NoSchedule
+  --disable servicelb
+  --disable traefik
+extra_agent_args: >-
+  {{ extra_args }}
