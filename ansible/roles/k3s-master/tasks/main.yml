@@ -74,3 +74,24 @@
     - "{{ k3s_server_manifests_directories.files }}"
   loop_control:
     label: "{{ item.path }}"
+
+- name: Copy kubeconfig for later download
+  when: groups['masters'][0] in ansible_facts['all_ipv4_addresses']
+  ansible.builtin.copy:
+    src: /etc/rancher/k3s/k3s.yaml
+    dest: /root/k3s.yaml
+    remote_src: yes
+
+- name: Replace URL in kubeconfig
+  when: groups['masters'][0] in ansible_facts['all_ipv4_addresses']
+  ansible.builtin.replace:
+    path: /root/k3s.yaml
+    regexp: 'https:\/\/\d+.\d+.\d+.\d+:6443'
+    replace: "https://{{ ansible_default_ipv4.address | ansible.utils.ipwrap }}:6443"
+
+- name: Download kubeconfig
+  when: groups['masters'][0] in ansible_facts['all_ipv4_addresses']
+  ansible.builtin.fetch:
+    src: /root/k3s.yaml
+    dest: ~/.kube/config
+    flat: yes

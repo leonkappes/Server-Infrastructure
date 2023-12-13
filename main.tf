@@ -30,6 +30,7 @@ resource "hcloud_load_balancer_target" "entry_loadbalancer_targets" {
   type             = "server"
   load_balancer_id = hcloud_load_balancer.entry_loadbalancer.id
   server_id        = each.value.id
+  use_private_ip = true
 }
 
 resource "hcloud_load_balancer_network" "entry_loadbalancer_network" {
