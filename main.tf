@@ -61,6 +61,7 @@ resource "hcloud_load_balancer_service" "entry_loadbalancer_service" {
     port     = "443"
     interval = "10"
     timeout  = "10"
+    retries  = 3
     http {
       domain       = "kappes.space"
       path         = "/"
@@ -83,7 +84,7 @@ resource "hcloud_placement_group" "placement_group_nodes" {
 resource "hcloud_server" "masters" {
   count              = 3
   name               = "k3s-master-${count.index + 1}"
-  server_type        = "cx11"
+  server_type        = "cx23"
   image              = "debian-12"
   ssh_keys           = ["SSH_KEY"]
   location           = "fsn1"
@@ -106,7 +107,7 @@ resource "hcloud_server" "masters" {
 resource "hcloud_server" "nodes" {
   count              = 2
   name               = "k3s-node-${count.index + 1}"
-  server_type        = "cx11"
+  server_type        = "cx23"
   image              = "debian-12"
   ssh_keys           = ["SSH_KEY"]
   location           = "fsn1"
