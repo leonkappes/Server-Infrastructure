@@ -21,7 +21,10 @@ Server-Infrastructure/
 ├── templates/
 │   └── hosts.tpl       # Ansible inventory template
 └── ansible/
-    └── roles           # configuration for master and worker k3s nodes
+    ├── ansible.cfg         # Ansible configuration (inventory path, callbacks)
+    ├── requirements.yml    # Ansible Galaxy collection dependencies
+    ├── site.yml            # Main playbook
+    └── roles/              # configuration for master and worker k3s nodes
 ```
 
 ---
@@ -50,6 +53,7 @@ terraform apply
 | [Hetzner Cloud](https://www.hetzner.com/cloud) | Cloud provider for VMs (masters & worker nodes) |
 | [Cloudflare](https://www.cloudflare.com/) | DNS management |
 | [Ansible](https://www.ansible.com/) | Server configuration management |
+| [K3s](https://k3s.io/) | Lightweight Kubernetes distribution deployed on the VMs |
 
 ---
 
@@ -92,7 +96,17 @@ terraform apply
 Once `terraform apply` completes, the Ansible inventory at `ansible/inventory/hosts.cfg` is ready:
 
 ```bash
-ansible-playbook ansible/site.yml -i ansible/inventory/hosts.cfg
+# Install required Ansible collections
+ansible-galaxy collection install -r ansible/requirements.yml
+
+# Run the playbook
+ansible-playbook ansible/site.yml
+```
+
+The kubeconfig for the new cluster is fetched to `~/.kube/k3s.yaml`. To merge it into your existing config:
+
+```bash
+KUBECONFIG=~/.kube/config:~/.kube/k3s.yaml kubectl config view --flatten > ~/.kube/config
 ```
 
 ---

@@ -1,4 +1,0 @@
-- [x] Add Loadbalancer for worker Nodes(how does it work with k8s)
-    - [ ] Add Loadbalancer in k3s via Flux
-- [ ] Ansible logic for k3s install
-- [ ] Flux deployment to cluster via ansible

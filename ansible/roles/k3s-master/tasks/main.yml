@@ -1,6 +1,6 @@
 ---
 - name: Init cluster
-  command:
+  ansible.builtin.command:
     cmd: "systemd-run -p RestartSec=2 \
       -p Restart=on-failure \
       --unit=k3s-init \
@@ -11,8 +11,8 @@
   when: not ansible_check_mode
   block:
     - name: Verify that all nodes actually joined
-      command:
-        cmd: k3s kubectl get nodes -l "node-role.kubernetes.io/master=true" -o=jsonpath="{.items[*].metadata.name}"
+      ansible.builtin.command:
+        cmd: k3s kubectl get nodes -l "node-role.kubernetes.io/control-plane=true" -o=jsonpath="{.items[*].metadata.name}"
       register: nodes
       until: nodes.rc == 0 and (nodes.stdout.split() | length) == (groups['masters'] | length) # yamllint disable-line rule:line-length
       retries: "{{ retry_count | default(20) }}"
@@ -20,58 +20,56 @@
       changed_when: false
   always:
     - name: Kill the temporary service used for initialization
-      systemd:
+      ansible.builtin.systemd:
         name: k3s-init
         state: stopped
       failed_when: false
 
 - name: Copy K3s service file
-  register: k3s_service
-  template:
+  ansible.builtin.template:
     src: "k3s.service.j2"
     dest: "{{ systemd_dir }}/k3s.service"
     owner: root
     group: root
-    mode: 0644
+    mode: "0644"
+  notify: Restart k3s
 
 - name: Enable and check K3s service
-  systemd:
+  ansible.builtin.systemd:
     name: k3s
-    daemon_reload: yes
-    state: restarted
-    enabled: yes
+    daemon_reload: true
+    state: started
+    enabled: true
 
 - name: Create kubectl symlink
-  file:
+  ansible.builtin.file:
     src: /usr/local/bin/k3s
     dest: /usr/local/bin/kubectl
     state: link
 
 - name: Create crictl symlink
-  file:
+  ansible.builtin.file:
     src: /usr/local/bin/k3s
     dest: /usr/local/bin/crictl
     state: link
 
 - name: Get contents of manifests folder
-  find:
+  ansible.builtin.find:
     paths: /var/lib/rancher/k3s/server/manifests
     file_type: file
   register: k3s_server_manifests
 
 - name: Get sub dirs of manifests folder
-  find:
+  ansible.builtin.find:
     paths: /var/lib/rancher/k3s/server/manifests
     file_type: directory
   register: k3s_server_manifests_directories
 
 - name: Remove manifests and folders that are only needed for bootstrapping cluster so k3s doesn't auto apply on start
-  file:
+  ansible.builtin.file:
     path: "{{ item.path }}"
     state: absent
-  with_items:
-    - "{{ k3s_server_manifests.files }}"
-    - "{{ k3s_server_manifests_directories.files }}"
+  loop: "{{ k3s_server_manifests.files + k3s_server_manifests_directories.files }}"
   loop_control:
     label: "{{ item.path }}"
 
@@ -80,7 +78,7 @@
   ansible.builtin.copy:
     src: /etc/rancher/k3s/k3s.yaml
     dest: /root/k3s.yaml
-    remote_src: yes
+    remote_src: true
 
 - name: Replace URL in kubeconfig
   when: groups['masters'][0] in ansible_facts['all_ipv4_addresses']
@@ -93,5 +91,6 @@
   when: groups['masters'][0] in ansible_facts['all_ipv4_addresses']
   ansible.builtin.fetch:
     src: /root/k3s.yaml
-    dest: ~/.kube/config
-    flat: yes
+    # Written to a separate file to avoid overwriting existing ~/.kube/config contexts.
+    dest: ~/.kube/k3s.yaml
+    flat: true

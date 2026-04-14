@@ -1,8 +1,11 @@
 ---
-k3s_version: v1.28.3+k3s2
+# Check https://github.com/k3s-io/k3s/releases for the latest version
+k3s_version: v1.32.3+k3s1
 # this is the user that has ssh access to these machines
+# NOTE: prefer a non-root user with sudo over direct root login
 ansible_user: root
 systemd_dir: /etc/systemd/system
+# NOTE: vault this with: ansible-vault encrypt_string '<token>' --name k3s_token
 k3s_token: "some-SUPER-DEDEUPER-secret-password"
 # interface which will be used for flannel
 flannel_iface: "ens10"
@@ -15,7 +18,7 @@ extra_args: >-
 
 extra_server_args: >-
   {{ extra_args }}
-  --node-taint node-role.kubernetes.io/master=true:NoSchedule
+  --node-taint node-role.kubernetes.io/control-plane=true:NoSchedule
   --tls-san {{ ansible_default_ipv4.address }}
   --disable traefik
 extra_agent_args: >-
